@@ -76,10 +76,10 @@ sudo slcand -o -c -s8 $device_path $name_of_can_interface
 sudo ip link set dev $name_of_can_interface up type can bitrate $bitrate
 
 if [ $? -ne 0 ]; then
-  echo -e "${RED}Error flashing the device${NC}"
+  echo -e "${RED}Error starting can ${NC}"
   exit 1
 else
-  echo -e "${ORANGE}Device flashed successfully!${NC}"
+  echo -e "${ORANGE}Can started successfully!${NC}"
 fi
 exit 0
 

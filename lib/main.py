@@ -16,7 +16,7 @@ class SimpleSDRAC_control(Node):
     # self.publisher_ = self.create_publisher(Joy, "joy", 10)
     self.reciver = self.create_subscription(Joy, "joy", self.reciver_callback, 10)
     self.last_connection = self.get_clock().now()
-    timer_period = 0.1  # seconds
+    timer_period = 0.01  # seconds
     self.timer = self.create_timer(timer_period, self.timer_callback)
     self.can_bus = can_bus = can.interface.Bus('can0', bustype='socketcan', bitrate=100000)
     self.can_db = cantools.database.load_file('can/can.dbc')
@@ -77,33 +77,35 @@ class SimpleSDRAC_control(Node):
 
 
   def timer_callback(self):
-    if self.get_clock().now() - self.last_connection > Duration(seconds=1):
-      self.conncected = False
-      self.axes = [0, 0, 0, 0, 0, 0]
-      self.buttons = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    
-    if self.conncected:
+    try:
+      if self.get_clock().now() - self.last_connection > Duration(seconds=1):
+        self.conncected = False
+        self.axes = [0, 0, 0, 0, 0, 0]
+        self.buttons = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+      
+      if self.conncected:
+
+        velocity = self.axes[1]
+        data = self.msg_set_pos.encode({"position": 0, "velocity": velocity})
+        msg = can.Message(arbitration_id=self.msg_set_pos.frame_id, data=data, is_extended_id=False)
+        self.can_bus.send(msg)
+        self.get_logger().info(f"velocity: {velocity}")
 
 
-      velocity = self.axes[1]
-      data = self.msg_set_pos.encode({"position": 0, "velocity": velocity})
-      msg = can.Message(arbitration_id=self.msg_set_pos.frame_id, data=data, is_extended_id=False)
-      self.can_bus.send(msg)
-
-
-      #send request for pos and vel
-      data = self.msg_get_pos.encode({'position': 0, 'velocity': 0})
-      msg = can.Message(arbitration_id=self.msg_get_pos.frame_id, is_extended_id=False, is_remote_frame=True)
-      self.can_bus.send(msg)
-      messages=  self.can_bus.recv(0.05)
-      if messages:
-        data = self.msg_get_pos.decode(messages.data)
-        pos = data['position']
-        vel = data['velocity']
-        self.get_logger().info(f"pos: {pos} vel: {vel}")
-    else:
-      self.get_logger().info("No connection")
-
+        #send request for pos and vel
+        data = self.msg_get_pos.encode({'position': 0, 'velocity': 0})
+        msg = can.Message(arbitration_id=self.msg_get_pos.frame_id, is_extended_id=False, is_remote_frame=True)
+        self.can_bus.send(msg)
+        messages=  self.can_bus.recv(0.05)
+        if messages:
+          data = self.msg_get_pos.decode(messages.data)
+          pos = data['position']
+          vel = data['velocity']
+          self.get_logger().info(f"pos: {pos} vel: {vel}")
+      else:
+        self.get_logger().info("No connection")
+    except can.exceptions.CanOperationError as e:
+      self.get_logger().error(f"Error: {e}")
 
 def main(args=None):
   rclpy.init(args=args)

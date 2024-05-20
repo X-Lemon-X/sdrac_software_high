@@ -12,14 +12,24 @@ import cantools
 
 class SimpleSDRAC_control(Node):
   def __init__(self):
-    super().__init__("lemonx_joy_publisher")
+    super().__init__("robot_rc_controler")
     # self.publisher_ = self.create_publisher(Joy, "joy", 10)
     self.reciver = self.create_subscription(Joy, "joy", self.reciver_callback, 10)
-    self.last_connection = self.get_clock().now()
-    timer_period = 0.01  # seconds
+    self.connction_timeout = Duration(seconds=1)
+    self.last_connection = self.get_clock().now() - self.connction_timeout - Duration(seconds=1)
+    self.rc_connection_chenge = True
+    self.conncected = False
+
+
+    timer_period = 1/10  # seconds
     self.timer = self.create_timer(timer_period, self.timer_callback)
+    self.axes = [0, 0, 0, 0, 0, 0]
+    self.buttons = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    
+    
     self.can_bus = can_bus = can.interface.Bus('can0', bustype='socketcan', bitrate=100000)
     self.can_db = cantools.database.load_file('can/can.dbc')
+
 
     self.konarms_can_messages = {
       'konarm_1_status': self.can_db.get_message_by_name('konarm_1_status'),
@@ -36,13 +46,12 @@ class SimpleSDRAC_control(Node):
     self.msg_status = self.can_db.get_message_by_name('konarm_1_status')
     self.msg_set_pos = self.can_db.get_message_by_name('konarm_1_set_pos')
     self.msg_get_pos = self.can_db.get_message_by_name('konarm_1_get_pos')
-    self.conncected = False
 
   def reciver_callback(self, msg):
     self.axes = msg.axes
     self.buttons = msg.buttons
     self.last_connection = self.get_clock().now()
-    self.conncected = True
+
 
   def send_data_to_can(self):
     # joint 1
@@ -75,35 +84,56 @@ class SimpleSDRAC_control(Node):
     for msg in can_msges:
       self.can_bus.send(msg)
 
+  def read_data_from_can(self):
+    try:
+      pass
+    except can.exceptions.CanOperationError as e:
+      self.get_logger().error(f"Timout RX")
 
   def timer_callback(self):
     try:
-      if self.get_clock().now() - self.last_connection > Duration(seconds=1):
+      if self.get_clock().now() - self.last_connection > self.connction_timeout:
+        if self.conncected:
+          self.rc_connection_chenge = True
         self.conncected = False
         self.axes = [0, 0, 0, 0, 0, 0]
         self.buttons = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-      
-      if self.conncected:
+      else:
+        if not self.conncected:
+          self.rc_connection_chenge = True
+        self.conncected = True
 
-        velocity = self.axes[1]
+      if self.conncected and self.rc_connection_chenge:
+        self.get_logger().info("Control node connected")
+        self.rc_connection_chenge = False
+      elif not self.conncected and self.rc_connection_chenge:
+        self.get_logger().info("Control node disconnected")
+        self.rc_connection_chenge = False
+
+      if self.conncected:
+        velocity = self.axes[1]*2
         data = self.msg_set_pos.encode({"position": 0, "velocity": velocity})
         msg = can.Message(arbitration_id=self.msg_set_pos.frame_id, data=data, is_extended_id=False)
         self.can_bus.send(msg)
-        self.get_logger().info(f"velocity: {velocity}")
+        # self.get_logger().info(f"velocity: {velocity}")
 
 
-        #send request for pos and vel
         data = self.msg_get_pos.encode({'position': 0, 'velocity': 0})
         msg = can.Message(arbitration_id=self.msg_get_pos.frame_id, is_extended_id=False, is_remote_frame=True)
         self.can_bus.send(msg)
+
         messages=  self.can_bus.recv(0.05)
-        if messages:
-          data = self.msg_get_pos.decode(messages.data)
-          pos = data['position']
-          vel = data['velocity']
-          self.get_logger().info(f"pos: {pos} vel: {vel}")
-      else:
-        self.get_logger().info("No connection")
+        if messages is not None:
+          
+          if(messages.arbitration_id == self.msg_get_pos.frame_id):
+            data = self.msg_get_pos.decode(messages.data)
+            pos = data['position']
+            vel = data['velocity']
+            self.get_logger().info(f"id: {messages.arbitration_id}  pos: {pos} vel: {vel}")
+          else:
+            self.get_logger().info(f"UNNOWN id: {messages.arbitration_id}")
+          
+      
     except can.exceptions.CanOperationError as e:
       self.get_logger().error(f"Error: {e}")
 
@@ -116,4 +146,5 @@ def main(args=None):
 
 
 if __name__ == "__main__":
+
   main()

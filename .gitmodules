@@ -1,0 +1,3 @@
+[submodule "submodules/Pilot_6_axis"]
+	path = submodules/Pilot_6_axis
+	url = git@github.com:X-Lemon-X/Pilot_6_axis.git

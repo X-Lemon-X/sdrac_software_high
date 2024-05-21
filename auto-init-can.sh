@@ -79,6 +79,7 @@ if [ $? -ne 0 ]; then
   echo -e "${RED}Error starting can ${NC}"
   exit 1
 else
+
   echo -e "${ORANGE}Can started successfully!${NC}"
 fi
 exit 0

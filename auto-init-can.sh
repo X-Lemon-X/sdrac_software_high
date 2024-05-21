@@ -12,6 +12,35 @@ BLUE='\033[0;34m'
 ORANGE='\033[0;33m'
 NC='\033[0m' # No Color
 
+function install_program () {
+  if ! [ -x "$(command -v $1)" ]; then
+  echo -e "${ORANGE}Installing $1${NC}"
+  sudo apt-get install $1 -y
+else
+  echo -e "${BLUE}$1 is installed${NC}"
+fi
+}
+
+function check_if_program_is_installed () {
+  if ! [ -x "$(command -v $1)" ]; then
+  echo -e "${RED}Error: $1 is not installed.${NC}"
+  #ask user if he wants to install the program
+  read -p "Do you want to install $1? (y/n)" -n 1 -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    python3 -m pip install cantools
+  else
+    echo -e "${ORANGE}Exiting...${NC}"
+    exit 1
+  fi
+else
+  echo -e "${BLUE}$1 is installed${NC}"
+fi
+}
+
+
+#check if required programs are installed
+check_if_program_is_installed "can-tools"
 
 
 if ! [ -x "$(command -v cantools)" ]; then
@@ -28,7 +57,6 @@ if ! [ -x "$(command -v cantools)" ]; then
 else
   echo -e "${BLUE}cantools is installed${NC}"
 fi
-
 
 # get all fiels in /dev that contain the bus number
 devs=$(ls /dev | grep tty)

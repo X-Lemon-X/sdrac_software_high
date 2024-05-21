@@ -28,7 +28,8 @@ function check_if_program_is_installed () {
   read -p "Do you want to install $1? (y/n)" -n 1 -r
   echo
   if [[ $REPLY =~ ^[Yy]$ ]]; then
-    python3 -m pip install cantools
+    # python3 -m pip install cantools
+    sudo apt-get install $2 -y
   else
     echo -e "${ORANGE}Exiting...${NC}"
     exit 1

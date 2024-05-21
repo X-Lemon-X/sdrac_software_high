@@ -41,6 +41,7 @@ fi
 
 #check if required programs are installed
 check_if_program_is_installed "cantools" "can-tools"
+check_if_program_is_installed "slcand" "can-utils"
 
 
 if ! [ -x "$(command -v cantools)" ]; then

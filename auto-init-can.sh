@@ -14,51 +14,35 @@ NC='\033[0m' # No Color
 
 function install_program () {
   if ! [ -x "$(command -v $1)" ]; then
-  echo -e "${ORANGE}Installing $1${NC}"
+  echo -e "${ORANGE}Installing $2${NC}"
   sudo apt-get install $2 -y
-else
-  echo -e "${BLUE}$1 is installed${NC}"
-fi
+  else
+    echo -e "${BLUE}$1 is installed${NC}"
+  fi
 }
 
 function check_if_program_is_installed () {
   if ! [ -x "$(command -v $1)" ]; then
-  echo -e "${RED}Error: $1 is not installed.${NC}"
-  #ask user if he wants to install the program
-  read -p "Do you want to install $1? (y/n)" -n 1 -r
-  echo
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    # python3 -m pip install cantools
-    sudo apt-get install $2 -y
+    echo -e "${RED}Error: $1 is not installed.${NC}"
+    #ask user if he wants to install the program
+    read -p "Do you want to install $1? (y/n)" -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      # python3 -m pip install cantools
+      sudo apt-get install $2 -y
+    else
+      echo -e "${ORANGE}Exiting...${NC}"
+      exit 1
+    fi
   else
-    echo -e "${ORANGE}Exiting...${NC}"
-    exit 1
+    echo -e "${BLUE}$1 is installed${NC}"
   fi
-else
-  echo -e "${BLUE}$1 is installed${NC}"
-fi
 }
 
 
 #check if required programs are installed
 # check_if_program_is_installed "cantools" "can-tools"
 check_if_program_is_installed "slcand" "can-utils"
-
-
-# if ! [ -x "$(command -v cantools)" ]; then
-#   echo -e "${RED}Error: cantools is not installed.${NC}"
-#   #ask user if he wants to install the program
-#   read -p "Do you want to install $1? (y/n)" -n 1 -r
-#   echo
-#   if [[ $REPLY =~ ^[Yy]$ ]]; then
-#     python3 -m pip install cantools
-#   else
-#     echo -e "${ORANGE}Exiting...${NC}"
-#     exit 1
-#   fi
-# else
-#   echo -e "${BLUE}cantools is installed${NC}"
-# fi
 
 # get all fiels in /dev that contain the bus number
 devs=$(ls /dev | grep tty)
@@ -103,14 +87,15 @@ elif [[ $arch_arm == 'ar' ]]; then
   sudo ip link set up $name_of_can_interface
 else
   echo -e "${RED}Error: Unsupported architecture${NC}"
-  exit 1
+  echo -e "${ORANGE}Trying to start can anyway${NC}"
+  sudo slcand -o -c -s8 $device_path $name_of_can_interface
+  sudo ip link set up $name_of_can_interface
 fi  
 
 if [ $? -ne 0 ]; then
   echo -e "${RED}Error starting can ${NC}"
   exit 1
 else
-
   echo -e "${ORANGE}Can started successfully!${NC}"
 fi
 exit 0

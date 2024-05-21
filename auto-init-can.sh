@@ -21,31 +21,9 @@ else
 fi
 }
 
-# function check_if_program_is_installed () {
-#   if ! [ -x "$(command -v $1)" ]; then
-#   echo -e "${RED}Error: $1 is not installed.${NC}"
-#   #ask user if he wants to install the program
-#   read -p "Do you want to install $1? (y/n)" -n 1 -r
-#   echo
-#   if [[ $REPLY =~ ^[Yy]$ ]]; then
-#     python3 -m pip install cantools
-#   else
-#     echo -e "${ORANGE}Exiting...${NC}"
-#     exit 1
-#   fi
-# else
-#   echo -e "${BLUE}$1 is installed${NC}"
-# fi
-# }
-
-
-#check if required programs are installed
-check_if_program_is_installed "cantools" "can-tools"
-check_if_program_is_installed "slcand" "can-utils"
-
-
-if ! [ -x "$(command -v cantools)" ]; then
-  echo -e "${RED}Error: cantools is not installed.${NC}"
+function check_if_program_is_installed () {
+  if ! [ -x "$(command -v $1)" ]; then
+  echo -e "${RED}Error: $1 is not installed.${NC}"
   #ask user if he wants to install the program
   read -p "Do you want to install $1? (y/n)" -n 1 -r
   echo
@@ -56,8 +34,30 @@ if ! [ -x "$(command -v cantools)" ]; then
     exit 1
   fi
 else
-  echo -e "${BLUE}cantools is installed${NC}"
+  echo -e "${BLUE}$1 is installed${NC}"
 fi
+}
+
+
+#check if required programs are installed
+check_if_program_is_installed "cantools" "can-tools"
+check_if_program_is_installed "slcand" "can-utils"
+
+
+# if ! [ -x "$(command -v cantools)" ]; then
+#   echo -e "${RED}Error: cantools is not installed.${NC}"
+#   #ask user if he wants to install the program
+#   read -p "Do you want to install $1? (y/n)" -n 1 -r
+#   echo
+#   if [[ $REPLY =~ ^[Yy]$ ]]; then
+#     python3 -m pip install cantools
+#   else
+#     echo -e "${ORANGE}Exiting...${NC}"
+#     exit 1
+#   fi
+# else
+#   echo -e "${BLUE}cantools is installed${NC}"
+# fi
 
 # get all fiels in /dev that contain the bus number
 devs=$(ls /dev | grep tty)

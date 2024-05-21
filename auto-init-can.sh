@@ -91,12 +91,25 @@ echo -e "${BLUE}Seting up Can: $device_path${NC}"
 
 arch_x86=$(uname -m | grep -o "x86")
 arch_arm=$(uname -m | grep -o "ar")
+echo $arch_x86
+echo $arch_arm
 
-if [ -z $arch_x86 ]; then  
+# if [ -n $arch_x86 ]; then
+#   echo -e "${ORANGE}Architecture x86 ${NC}"
+# elif [ -n $arch_arm ]; then
+#   echo -e "${ORANGE}Architecture ARM ${NC}"
+# else
+#   echo -e "${RED}Error: Unsupported architecture${NC}"
+#   exit 1
+# fi
+
+# exit 0
+
+if [ -n $arch_x86 ]; then  
   echo -e "${ORANGE}Architecture x86 ${NC}"
   sudo slcand -o -c -s8 $device_path $name_of_can_interface
   sudo ip link set dev $name_of_can_interface up type can bitrate $bitrate
-elif [ -z $arch_arm ]; then
+elif [ -n $arch_arm ]; then
   echo -e "${ORANGE}Architecture ARM ${NC}"
   sudo slcand -o -c -s8 $device_path $name_of_can_interface
   sudo ip link set up $name_of_can_interface

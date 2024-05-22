@@ -27,7 +27,7 @@ class SimpleSDRAC_control(Node):
     self.buttons = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     
     
-    self.can_bus = can_bus = can.interface.Bus('can0', bustype='socketcan', bitrate=100000)
+    # self.can_bus = can_bus = can.interface.Bus('can0', bustype='socketcan', bitrate=100000)
     self.can_db = cantools.database.load_file('can/can.dbc')
 
 
@@ -42,6 +42,17 @@ class SimpleSDRAC_control(Node):
       'konarm_3_set_pos': self.can_db.get_message_by_name('konarm_3_set_pos'),
       'konarm_3_get_pos': self.can_db.get_message_by_name('konarm_3_get_pos'),
     }
+
+
+    self.konarms_id_to_name = {}
+    self.konarms_msg_to_id = {}
+    for key, value in self.konarms_can_messages.items():
+      self.konarms_id_to_name[value.frame_id] = key
+      self.konarms_msg_to_id[key] = value.frame_id
+
+    self.konarms_can_id_messages_decode = {}
+    for key, value in self.konarms_can_messages.items():
+      self.konarms_can_messages_decode[value.frame_id] = value.decode
 
     self.msg_status = self.can_db.get_message_by_name('konarm_1_status')
     self.msg_set_pos = self.can_db.get_message_by_name('konarm_1_set_pos')
@@ -68,27 +79,57 @@ class SimpleSDRAC_control(Node):
     sp_3 = self.konarms_can_messages['konarm_3_set_pos']
     data = sp_3.encode({"position": 0, "velocity": self.axes[2]})
     can_msges.append(can.Message(arbitration_id=sp_3.frame_id, data=data, is_extended_id=False))
-    # joint 4
-    sp_4 = self.konarms_can_messages['konarm_4_set_pos']
-    data = sp_4.encode({"position": 0, "velocity": self.axes[3]})
-    can_msges.append(can.Message(arbitration_id=sp_4.frame_id, data=data, is_extended_id=False))
-    # joint 5
-    sp_5 = self.konarms_can_messages['konarm_5_set_pos']
-    data = sp_5.encode({"position": 0, "velocity": self.axes[4]})
-    can_msges.append(can.Message(arbitration_id=sp_5.frame_id, data=data, is_extended_id=False))
-    # joint 6
-    sp_6 = self.konarms_can_messages['konarm_6_set_pos']
-    data = sp_6.encode({"position": 0, "velocity": self.axes[5]})
-    can_msges.append(can.Message(arbitration_id=sp_6.frame_id, data=data, is_extended_id=False))
+    # # joint 4
+    # sp_4 = self.konarms_can_messages['konarm_4_set_pos']
+    # data = sp_4.encode({"position": 0, "velocity": self.axes[3]})
+    # can_msges.append(can.Message(arbitration_id=sp_4.frame_id, data=data, is_extended_id=False))
+    # # joint 5
+    # sp_5 = self.konarms_can_messages['konarm_5_set_pos']
+    # data = sp_5.encode({"position": 0, "velocity": self.axes[4]})
+    # can_msges.append(can.Message(arbitration_id=sp_5.frame_id, data=data, is_extended_id=False))
+    # # joint 6
+    # sp_6 = self.konarms_can_messages['konarm_6_set_pos']
+    # data = sp_6.encode({"position": 0, "velocity": self.axes[5]})
+    # can_msges.append(can.Message(arbitration_id=sp_6.frame_id, data=data, is_extended_id=False))
     
     for msg in can_msges:
       self.can_bus.send(msg)
 
   def read_data_from_can(self):
     try:
-      pass
+      messages=  self.can_bus.recv(0.05)
+      if messages is not None:
+        if(messages.arbitration_id in self.konarms_id_to_name):
+          decode_func = self.konarms_can_id_messages_decode[messages.arbitration_id]
+          data = decode_func(messages.data)
+          self.get_logger().info(f"id: {self.konarms_id_to_name[messages.arbitration_id]}  data: {data}")
+        else:
+          self.get_logger().info(f"UNNOWN id: {messages.arbitration_id}")
+
     except can.exceptions.CanOperationError as e:
       self.get_logger().error(f"Timout RX")
+
+
+  def set_pos_konarm(self, pos, vel, id):
+    data = self.msg_set_pos.encode({"position": pos, "velocity": vel})
+    msg = can.Message(arbitration_id=id, data=data, is_extended_id=False)
+    self.can_bus.send(msg)
+
+  def get_pos_konarm(self, id):
+    data = self.msg_get_pos.encode({'position': 0, 'velocity': 0})
+    msg = can.Message(arbitration_id=id, is_extended_id=False, is_remote_frame=True)
+    self.can_bus.send(msg)
+  
+  def receive_pos_konarm(self, messages):
+    if messages is not None:
+      if(messages.arbitration_id == self.msg_get_pos.frame_id):
+        data = self.msg_get_pos.decode(messages.data)
+        pos = data['position']
+        vel = data['velocity']
+        self.get_logger().info(f"id: {messages.arbitration_id}  pos: {pos} vel: {vel}")
+      else:
+        self.get_logger().info(f"UNNOWN id: {messages.arbitration_id}")
+
 
   def timer_callback(self):
     try:
@@ -116,29 +157,33 @@ class SimpleSDRAC_control(Node):
           if abs(axis) < 0.06:
             self.fixed_axis.append(0)
           else:
-            self.fixed_axis.append(axis)
+            self.fixed_axis.append(axis) * 2
 
-        velocity = self.fixed_axis[1]*2
-        data = self.msg_set_pos.encode({"position": 0, "velocity": velocity})
-        msg = can.Message(arbitration_id=self.msg_set_pos.frame_id, data=data, is_extended_id=False)
-        self.can_bus.send(msg)
-        # self.get_logger().info(f"velocity: {velocity}")
+        self.set_pos_konarm(0, self.fixed_axis[0], self.konarms_msg_to_id['konarm_1_set_pos'])
+        self.set_pos_konarm(0, self.fixed_axis[1], self.konarms_msg_to_id['konarm_2_set_pos'])
+        self.set_pos_konarm(0, self.fixed_axis[2], self.konarms_msg_to_id['konarm_3_set_pos'])
+        self.get_pos_konarm(self.konarms_msg_to_id['konarm_1_get_pos'])
+        self.get_pos_konarm(self.konarms_msg_to_id['konarm_2_get_pos'])
+        self.get_pos_konarm(self.konarms_msg_to_id['konarm_3_get_pos'])
+        self.read_data_from_can()
 
+        # velocity = self.fixed_axis[1]
+        # data = self.msg_set_pos.encode({"position": 0, "velocity": velocity})
+        # msg = can.Message(arbitration_id=self.konarms_can_messages['konarm_1_set_pos'].frame_id, data=data, is_extended_id=False)
+        # self.can_bus.send(msg)
+        # data = self.msg_get_pos.encode({'position': 0, 'velocity': 0})
+        # msg = can.Message(arbitration_id=self.msg_get_pos.frame_id, is_extended_id=False, is_remote_frame=True)
+        # self.can_bus.send(msg)
 
-        data = self.msg_get_pos.encode({'position': 0, 'velocity': 0})
-        msg = can.Message(arbitration_id=self.msg_get_pos.frame_id, is_extended_id=False, is_remote_frame=True)
-        self.can_bus.send(msg)
-
-        messages=  self.can_bus.recv(0.05)
-        if messages is not None:
-          
-          if(messages.arbitration_id == self.msg_get_pos.frame_id):
-            data = self.msg_get_pos.decode(messages.data)
-            pos = data['position']
-            vel = data['velocity']
-            self.get_logger().info(f"id: {messages.arbitration_id}  pos: {pos} vel: {vel}")
-          else:
-            self.get_logger().info(f"UNNOWN id: {messages.arbitration_id}")
+        # messages=  self.can_bus.recv(0.05)
+        # if messages is not None:
+        #   if(messages.arbitration_id == self.msg_get_pos.frame_id):
+        #     data = self.msg_get_pos.decode(messages.data)
+        #     pos = data['position']
+        #     vel = data['velocity']
+        #     self.get_logger().info(f"id: {messages.arbitration_id}  pos: {pos} vel: {vel}")
+        #   else:
+        #     self.get_logger().info(f"UNNOWN id: {messages.arbitration_id}")
           
       
     except can.exceptions.CanOperationError as e:

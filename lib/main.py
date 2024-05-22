@@ -111,7 +111,14 @@ class SimpleSDRAC_control(Node):
         self.rc_connection_chenge = False
 
       if self.conncected:
-        velocity = self.axes[1]*2
+        self.fixed_axis = []
+        for axis in self.axes:
+          if abs(axis) < 0.06:
+            self.fixed_axis.append(0)
+          else:
+            self.fixed_axis.append(axis)
+
+        velocity = self.fixed_axis[1]*2
         data = self.msg_set_pos.encode({"position": 0, "velocity": velocity})
         msg = can.Message(arbitration_id=self.msg_set_pos.frame_id, data=data, is_extended_id=False)
         self.can_bus.send(msg)

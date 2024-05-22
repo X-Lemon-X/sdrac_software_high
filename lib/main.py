@@ -52,7 +52,7 @@ class SimpleSDRAC_control(Node):
 
     self.konarms_can_id_messages_decode = {}
     for key, value in self.konarms_can_messages.items():
-      self.konarms_can_messages_decode[value.frame_id] = value.decode
+      self.konarms_can_id_messages_decode[value.frame_id] = value.decode
 
     self.msg_status = self.can_db.get_message_by_name('konarm_1_status')
     self.msg_set_pos = self.can_db.get_message_by_name('konarm_1_set_pos')

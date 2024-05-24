@@ -39,6 +39,12 @@ function check_if_program_is_installed () {
   fi
 }
 
+## check if can interface is UP
+
+if sudo ip addr show $name_of_can_interface 2>/dev/null | grep -q "UP"; then
+echo -e "${ORANGE}Can is already UP!${NC}"
+exit 0
+fi
 
 #check if required programs are installed
 # check_if_program_is_installed "cantools" "can-tools"

@@ -21,7 +21,7 @@ class SimpleSDRAC_control(Node):
     self.conncected = False
 
 
-    timer_period = 1/100  # seconds
+    timer_period = 1/20  # seconds
     self.timer = self.create_timer(timer_period, self.timer_callback)
     self.axes = [0, 0, 0, 0, 0, 0]
     self.buttons = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -114,6 +114,7 @@ class SimpleSDRAC_control(Node):
     data = self.msg_set_pos.encode({"position": pos, "velocity": vel})
     msg = can.Message(arbitration_id=id, data=data, is_extended_id=False)
     self.can_bus.send(msg)
+    # self.get_logger().info(f"ID SET POS: {id}")
 
   def get_pos_konarm(self, id):
     data = self.msg_get_pos.encode({'position': 0, 'velocity': 0})
@@ -149,14 +150,14 @@ class SimpleSDRAC_control(Node):
             self.fixed_axis.append(axis*2)
 
         self.set_pos_konarm(0, self.fixed_axis[1], self.konarms_msg_to_id['konarm_1_set_pos'])
-        # self.set_pos_konarm(0, self.fixed_axis[0], self.konarms_msg_to_id['konarm_2_set_pos'])
-        # self.set_pos_konarm(0, self.fixed_axis[2], self.konarms_msg_to_id['konarm_3_set_pos'])
-        # self.get_pos_konarm(self.konarms_msg_to_id['konarm_1_get_pos'])
-        # self.read_data_from_can()
-        # self.get_pos_konarm(self.konarms_msg_to_id['konarm_2_get_pos'])
-        # self.read_data_from_can()
-        # self.get_pos_konarm(self.konarms_msg_to_id['konarm_3_get_pos'])
-        # self.read_data_from_can()
+        self.set_pos_konarm(0, self.fixed_axis[0], self.konarms_msg_to_id['konarm_2_set_pos'])
+        self.set_pos_konarm(0, self.fixed_axis[2], self.konarms_msg_to_id['konarm_3_set_pos'])
+        self.get_pos_konarm(self.konarms_msg_to_id['konarm_1_get_pos'])
+        self.read_data_from_can()
+        self.get_pos_konarm(self.konarms_msg_to_id['konarm_2_get_pos'])
+        self.read_data_from_can()
+        self.get_pos_konarm(self.konarms_msg_to_id['konarm_3_get_pos'])
+        self.read_data_from_can()
     except can.exceptions.CanOperationError as e:
       self.get_logger().error(f"Error: {e}")
 

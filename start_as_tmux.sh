@@ -1,3 +1,4 @@
+#!/bin/bash
 
 function start_tmux () {
   if ! tmux has-session -t $1 2>/dev/null; then

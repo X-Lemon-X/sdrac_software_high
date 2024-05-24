@@ -147,7 +147,7 @@ class SimpleSDRAC_control(Node):
           if abs(axis) < 0.06:
             self.fixed_axis.append(0)
           else:
-            self.fixed_axis.append(axis*2)
+            self.fixed_axis.append(axis)
 
         self.set_pos_konarm(0, self.fixed_axis[1], self.konarms_msg_to_id['konarm_1_set_pos'])
         self.set_pos_konarm(0, self.fixed_axis[0], self.konarms_msg_to_id['konarm_2_set_pos'])

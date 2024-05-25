@@ -9,19 +9,12 @@ function start_tmux () {
   fi
 }
 
-
-
 DIR=$(cd "$( dirname "$0" )" && pwd)
 cd $DIR
 
-echo "Started tmux $(date)" >> $DIR/tmux.log
-
-
-
+echo "Started tmux $(date)" 
 ./auto-init-can.sh
-
-
-start_tmux main $DIR/tmux/run_main.sh >> $DIR/tmux.log  
-start_tmux rc $DIR/tmux/run_pilot.sh >> $DIR/tmux.log
+start_tmux main $DIR/tmux/run_main.sh   
+start_tmux rc $DIR/tmux/run_pilot.sh
 
 

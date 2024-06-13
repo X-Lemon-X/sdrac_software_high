@@ -12,7 +12,7 @@ import cantools
 
 class SimpleSDRAC_control(Node):
   def __init__(self):
-    super().__init__("robot_rc_controler")
+    super().__init__(node_name="robot_rc_controler")
     # self.publisher_ = self.create_publisher(Joy, "joy", 10)
     self.reciver = self.create_subscription(Joy, "joy", self.reciver_callback, 10)
     self.connction_timeout = Duration(seconds=1)

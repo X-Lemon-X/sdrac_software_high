@@ -12,28 +12,10 @@ BLUE='\033[0;34m'
 ORANGE='\033[0;33m'
 NC='\033[0m' # No Color
 
-function install_program () {
-  if ! [ -x "$(command -v $1)" ]; then
-  echo -e "${ORANGE}Installing $2${NC}"
-  sudo apt-get install $2 -y
-  else
-    echo -e "${BLUE}$1 is installed${NC}"
-  fi
-}
-
 function check_if_program_is_installed () {
   if ! [ -x "$(command -v $1)" ]; then
     echo -e "${RED}Error: $1 is not installed.${NC}"
-    #ask user if he wants to install the program
-    read -p "Do you want to install $1? (y/n)" -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-      # python3 -m pip install cantools
-      sudo apt-get install $2 -y
-    else
-      echo -e "${ORANGE}Exiting...${NC}"
-      exit 1
-    fi
+    sudo apt-get install $2 -y
   else
     echo -e "${BLUE}$1 is installed${NC}"
   fi
@@ -46,13 +28,11 @@ echo -e "${ORANGE}Can is already UP!${NC}"
 exit 0
 fi
 
-#check if required programs are installed
-# check_if_program_is_installed "cantools" "can-tools"
 check_if_program_is_installed "slcand" "can-utils"
+check_if_program_is_installed "ifconfig" "net-tools"
 
 # get all fiels in /dev that contain the bus number
 devs=$(ls /dev | grep tty)
-
 device_path=""
 #iterate over all devices
 for dev in $devs; do
@@ -60,14 +40,10 @@ for dev in $devs; do
   device_info=$(udevadm info /dev/$dev)
   venid=$(echo $device_info | grep -o -E "ID_VENDOR_ID=$vendor_id" | grep -o $vendor_id)
   prodid=$(echo $device_info | grep -o -E "ID_MODEL_ID=$product_id"  | grep -o $product_id)
-  # venenc=$(echo $device_info | grep -o -E "ID_VENDOR_ENC=$vendor_enc"  | grep -o $vendor_enc)
-
   if [ -z $venid ] || [ -z $prodid ] ; then
     continue
   fi
-
   echo -e "${GREEN}Can-hat found on: /dev/$dev${NC}"
-  # echo -e "${GREEN}ID: $venid:$prodid  ENC: $venenc${NC}"
   device_path="/dev/$dev"
   break
 done
@@ -97,6 +73,8 @@ else
   sudo slcand -o -c -s8 $device_path $name_of_can_interface
   sudo ip link set up $name_of_can_interface
 fi  
+
+sudo ifconfig $name_of_can_interface txqueuelen 1000
 
 if [ $? -ne 0 ]; then
   echo -e "${RED}Error starting can ${NC}"

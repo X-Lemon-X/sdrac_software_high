@@ -2,7 +2,7 @@ import rclpy
 from rclpy.duration import Duration
 from rclpy.node import Node
 from sensor_msgs.msg import Joy
-
+import time
 import can
 import cantools
 
@@ -27,7 +27,7 @@ class SimpleSDRAC_control(Node):
     self.buttons = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     
     
-    self.can_bus = can_bus = can.interface.Bus('can0', bustype='socketcan', bitrate=100000)
+    self.can_bus = can.interface.Bus('can0', bustype='socketcan', bitrate=100000)
     self.can_db = cantools.database.load_file('can/can.dbc')
 
 
@@ -93,7 +93,7 @@ class SimpleSDRAC_control(Node):
     # can_msges.append(can.Message(arbitration_id=sp_6.frame_id, data=data, is_extended_id=False))
     
     for msg in can_msges:
-      self.can_bus.send(msg)
+      self.send_can(msg)
 
   def read_data_from_can(self):
     try:
@@ -109,17 +109,28 @@ class SimpleSDRAC_control(Node):
     except can.exceptions.CanOperationError as e:
       self.get_logger().error(f"Timout RX")
 
+  def send_can(self, can_msg:can.Message):
+    max_send_tries = 5
+    while max_send_tries > 0:
+      try:
+        self.can_bus.send(can_msg)
+        break
+      except can.exceptions.CanOperationError as e:
+        self.get_logger().error(f"Error: {e}")
+        self.can_bus.flush_tx_buffer()
+        max_send_tries -= 1
+        time.sleep(0.1) 
 
   def set_pos_konarm(self, pos, vel, id):
     data = self.msg_set_pos.encode({"position": pos, "velocity": vel})
     msg = can.Message(arbitration_id=id, data=data, is_extended_id=False)
-    self.can_bus.send(msg)
+    self.send_can(msg)
     # self.get_logger().info(f"ID SET POS: {id}")
 
   def get_pos_konarm(self, id):
     data = self.msg_get_pos.encode({'position': 0, 'velocity': 0})
     msg = can.Message(arbitration_id=id, is_extended_id=False, is_remote_frame=True)
-    self.can_bus.send(msg)
+    self.send_can(msg)
   
   def timer_callback(self):
     try:

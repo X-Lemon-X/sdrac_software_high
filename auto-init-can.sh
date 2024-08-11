@@ -68,7 +68,7 @@ elif [[ $arch_arm == 'ar' ]]; then
   sudo slcand -o -c -s8 $device_path $name_of_can_interface
   sudo ip link set up $name_of_can_interface
 else
-  echo -e "${RED}Error: Unsupported architecture${NC}"
+  echo -e "${RED}Error: unnknown architecture${NC}"
   echo -e "${ORANGE}Trying to start can anyway${NC}"
   sudo slcand -o -c -s8 $device_path $name_of_can_interface
   sudo ip link set up $name_of_can_interface

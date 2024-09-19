@@ -67,14 +67,15 @@ class SimpleSDRAC_control(Node):
   def send_data_to_can(self):
     can_msges = []
     # joint 1
-    # sp_1 = self.konarms_can_messages['konarm_1_set_pos']
-    # data = sp_1.encode({"position": 0, "velocity": self.axes[0]})
-    # can_msges.append(can.Message(arbitration_id=sp_1.frame_id, data=data, is_extended_id=False))
+    sp_1 = self.konarms_can_messages['konarm_1_set_pos']
+    data = sp_1.encode({"position": 0, "velocity": self.axes[0]})
+    can_msges.append(can.Message(arbitration_id=sp_1.frame_id, data=data, is_extended_id=False))
     
     # joint 2
-    sp_2 = self.konarms_can_messages['konarm_2_set_pos']
-    data = sp_2.encode({"position": self.axes[1], "velocity": 1.5})
-    can_msges.append(can.Message(arbitration_id=sp_2.frame_id, data=data, is_extended_id=False))
+    # sp_2 = self.konarms_can_messages['konarm_2_set_pos']
+    # data = sp_2.encode({"position": self.axes[1], "velocity": 1.5})
+    # can_msges.append(can.Message(arbitration_id=sp_2.frame_id, data=data, is_extended_id=False))
+    
     # joint 3
     # sp_3 = self.konarms_can_messages['konarm_3_set_pos']
     # data = sp_3.encode({"position": 0, "velocity": self.axes[2]})
@@ -161,13 +162,13 @@ class SimpleSDRAC_control(Node):
           else:
             self.fixed_axis.append(axis)
 
-        # self.set_pos_konarm(0, self.fixed_axis[1], self.konarms_msg_to_id['konarm_1_set_pos'])
-        self.set_pos_konarm(2*self.fixed_axis[1],1.5, self.konarms_msg_to_id['konarm_2_set_pos'])
-        # self.set_pos_konarm(0, self.fixed_axis[2], self.konarms_msg_to_id['konarm_3_set_pos'])
-        # self.get_pos_konarm(self.konarms_msg_to_id['konarm_1_get_pos'])
-        # self.read_data_from_can()
-        self.get_pos_konarm(self.konarms_msg_to_id['konarm_2_get_pos'])
+        self.set_pos_konarm(0, self.fixed_axis[1], self.konarms_msg_to_id['konarm_1_set_pos'])
+        # self.set_pos_konarm(2*self.fixed_axis[1],1.5, self.konarms_msg_to_id['konarm_2_set_pos'])
+        # self.set_pos_konarm(0, velocity, self.konarms_msg_to_id['konarm_3_set_pos'])
+        self.get_pos_konarm(self.konarms_msg_to_id['konarm_1_get_pos'])
         self.read_data_from_can()
+        # self.get_pos_konarm(self.konarms_msg_to_id['konarm_2_get_pos'])
+        # self.read_data_from_can()
         # self.get_pos_konarm(self.konarms_msg_to_id['konarm_3_get_pos'])
         # self.read_data_from_can()
     except can.exceptions.CanOperationError as e:

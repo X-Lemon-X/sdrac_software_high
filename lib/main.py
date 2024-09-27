@@ -28,7 +28,7 @@ class SimpleSDRAC_control(Node):
     
     
     self.can_bus = can.interface.Bus('can0', bustype='socketcan', bitrate=100000)
-    self.can_bus.flush_tx_buffer()
+    # self.can_bus.flush_tx_buffer()
     self.can_db = cantools.database.load_file('lib/ariadna_constants/can_messages/output/can.dbc')
 
 
@@ -102,9 +102,9 @@ class SimpleSDRAC_control(Node):
     data = sp_5.encode({"position": 0, "velocity": self.axes[4]})
     can_msges.append(can.Message(arbitration_id=sp_5.frame_id, data=data, is_extended_id=True))
     ## joint 6
-    # sp_6 = self.konarms_can_messages['konarm_6_set_pos']
-    # data = sp_6.encode({"position": 0, "velocity": self.axes[5]})
-    # can_msges.append(can.Message(arbitration_id=sp_6.frame_id, data=data, is_extended_id=True))
+    sp_6 = self.konarms_can_messages['konarm_6_set_pos']
+    data = sp_6.encode({"position": 0, "velocity": self.axes[5]})
+    can_msges.append(can.Message(arbitration_id=sp_6.frame_id, data=data, is_extended_id=True))
 
     ## get pos
     ## joint 1
